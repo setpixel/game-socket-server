@@ -9,10 +9,11 @@ var serverConfig = {
   version: '0.0.1',
   port: process.env.PORT || 3000,
   name: process.env.SERVER_NAME || 'CHUCKLESERVER',
-  logLevel: 1,
+  logLevel: 0,
 }
 
 var players;
+var connectionAuthTimeout;
 
 function init() {
   players = [];
@@ -31,19 +32,41 @@ app.get('/', function (req, res) {
 function onSocketConnection(client) {
   client.userid = UUID();
   client.emit('onconnected', { id: client.userid } );
-  console.log('\t socket.io:: player ' + client.userid + ' connected');
+  logInfo(client.userid + ' connected', 100);
+  // start the clock for them to auth
+  connectionAuthTimeout = setTimeout(function(){
+    logInfo('disconnect user after 2000 ms');
+    client.disconnect();
+  }, 2000);
+  client.on('auth', onAuth);
+
+
 
   client.on("disconnect", onClientDisconnect);
-
   client.on("player message", onPlayerMessage);
-
   client.on("new player", onNewPlayer);
-
   client.on("server time", onServerTime);
 };
 
+function onAuth(token) {
+  clearTimeout(connectionAuthTimeout);
+  if (token) {
+    // look up token. is good let them in, not disconnect
+    if (token == 'YES') {
+      // Init Player class
+      // Grab Global information Information/stats
+      // Join a main lobby
+    } else {
+      this.disconnect();
+    }
+  } else {
+    this.disconnect();
+  }
+
+}
+
 function onClientDisconnect(client) {
-  console.log('\t socket.io:: client disconnected ' + this.userid);
+  logInfo('client disconnected ' + this.userid);
 };
 
 function onPlayerMessage(messageText) {
@@ -67,7 +90,7 @@ function onServerTime() {
 
 function logInfo(string, level) {
   if (!level) { level = 0 };
-  if (level > serverConfig.logLevel) {
+  if (level >= serverConfig.logLevel) {
     console.log('\t || ' + serverConfig.name + ' || ' + string);
   }
 }

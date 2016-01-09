@@ -10,7 +10,7 @@
 // adding friends
   //  online notification
   //  where they are
-  //  p2p chat
+  //  p2p chatt
 
   // 1. connect 
   var socket = io.connect('http://localhost:3000');
@@ -19,6 +19,9 @@
     // put whole loop in here
 
     // authenticate with token
+    socket.emit('auth', 'YES');
+    // get stats
+
     // sync time with server
     // join lobby
         // get who is in the room
