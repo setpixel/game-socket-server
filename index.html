@@ -1,0 +1,51 @@
+
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// cheating
+// saving
+  //  on connect get game save information
+  //  on disconnect, save game information
+// scaling
+// adding friends
+  //  online notification
+  //  where they are
+  //  p2p chat
+
+  // 1. connect 
+  var socket = io.connect('http://localhost:3000');
+  
+  socket.on('onconnected', function (data) {
+    // put whole loop in here
+
+    // authenticate with token
+    // sync time with server
+    // join lobby
+        // get who is in the room
+
+    // join room you occupy
+        // GET ON ENTRANCE
+        //    get who is in the room
+        //    positions
+        // IN LOOP
+        //    physics updates
+        //    second updates (world)
+        // SEND IN LOOP
+        //    physics updates
+        //    second updates
+        // SEND ON EVENT
+        //    event messages (chat, etc.)
+
+    console.log(data);
+    socket.emit('server time');
+  
+    socket.on('time', function (data) {
+      console.log(data);
+    });
+
+
+
+  });
+
+
+</script>
