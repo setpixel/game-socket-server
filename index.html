@@ -1,5 +1,9 @@
-
-
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // cheating
@@ -77,10 +81,12 @@
 
     socket.on('new room player', function(player){
       console.log("NEW PLAYER!!!", player);
+      addCursor(player.x, player.y, player.username, player.clientid);
     });
     
     socket.on('room position', function(position){
       console.log("update position: ", position);
+      updateCursorPosition(position.position.x, position.position.y, position.clientid.substr(2))
     });
 
 
@@ -95,11 +101,22 @@
 
   window.addEventListener("mousemove", function(event){
     if (socket.connected) {
-      console.log(event.x, event.y)
+      //console.log(event.x, event.y)
       socket.emit('room update position', {x: event.x, y: event.y});
     }
   });
 
+  function addCursor(x, y, name, id) {
+    var $newdiv = $('<div id="' + id.substr(2) + '" ><img src="mac-cursor.png"><span>' + name + '</span></div>');
+    $('body').append($newdiv);
+  }
+
+  function updateCursorPosition(x, y, id) {
+    var div = $('#' + id)
+    div.offset({top:y,left:x})
+  }
 
 
 </script>
+</body>
+</html>

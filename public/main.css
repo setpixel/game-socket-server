@@ -1,0 +1,8 @@
+div {
+  display: block;
+  position: absolute;
+}
+
+img {
+  max-width: 30px;
+}

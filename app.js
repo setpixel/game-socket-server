@@ -1,4 +1,5 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var UUID = require('node-uuid');
@@ -29,6 +30,8 @@ function init() {
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
+
+app.use(express.static('public'));
 
 function onSocketConnection(client) {
   client.emit('onconnected');
@@ -107,42 +110,17 @@ function onRoomUpdatePosition(position) {
   
 
   logInfo(this.currentRoom + ' > ' + players[this.userid].username + ": updatePosition")
-  this.broadcast.to(this.currentRoom).emit('room position', {userid: this.userid, position: position});
+  this.broadcast.to(this.currentRoom).emit('room position', {userid: this.userid, clientid: this.id, position: position});
 };
 
 
 function lookUpToken(token) {
   if (token == 'YES') {
-    var fakeusers = [
-      { 
-        userid: 1,
-        username: 'setpixel',
-      },
-      { 
-        userid: 2,
-        username: 'eip56',
-      },
-      { 
-        userid: 3,
-        username: 'sneech',
-      },
-      { 
-        userid: 4,
-        username: 'bob',
-      },
-      { 
-        userid: 5,
-        username: 'susan',
-      },
-      { 
-        userid: 6,
-        username: 'jerry',
-      },
-      { 
-        userid: 7,
-        username: 'linda',
-      }
-    ];
+    var fakenames = ["David", "Scott", "Andrew", "James", "Christopher", "Michael", "Craig", "Ryan", "Daniel", "Ross", "Jamie", "Sean", "John", "Jordan", "Robert", "Steven", "Liam", "Mark", "Paul", "Stuart", "Matthew", "Stephen", "Thomas", "Callum", "Darren", "Gary", "Lewis", "William", "Connor", "Calum", "Martin", "Grant", "Adam", "Alexander", "Kyle", "Lee", "Kevin", "Jonathan", "Shaun", "Fraser", "Kieran", "Jack", "Dean", "Cameron", "Peter", "Alan", "Iain", "Marc", "Greg", "Graeme", "Conor", "Ian", "Euan", "Gavin", "Richard", "Blair", "Colin", "Joseph", "Aaron", "Dale", "Neil", "Sam", "Jason", "Joshua", "Gordon", "Samuel", "Stewart", "Nathan", "Nicholas", "Anthony", "Douglas", "Rory", "Alistair", "Brian", "Allan", "Ewan", "George", "Duncan", "Graham", "Ben", "Benjamin", "Gregor", "Declan", "Patrick", "Dylan", "Kenneth", "Derek", "Alasdair", "Owen", "Greig", "Barry", "Aidan", "Gareth", "Josh", "Charles", "Daryl", "Garry", "Simon", "Robbie", "Alastair"];  
+    var fakeusers = [];
+    for (var i = 0; i < fakenames.length; i++) {
+      fakeusers.push({userid: i, username: fakenames[i]});
+    }
     var user = fakeusers[Math.round(Math.random()*(fakeusers.length-1))]
     return user;
   } else {
