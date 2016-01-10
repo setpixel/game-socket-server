@@ -13,9 +13,11 @@ var serverConfig = {
 }
 
 var players;
+var rooms;
 
 function init() {
   players = {};
+  rooms = {};
   server.listen(serverConfig.port);
   logInfo('Listening on port ' + serverConfig.port, 100);
   logInfo('Version: ' + serverConfig.version, 100);
@@ -38,12 +40,13 @@ function onSocketConnection(client) {
   }, 5000);
   client.on('auth', onAuth);
 
-
-
   client.on("disconnect", onClientDisconnect);
   client.on("player message", onPlayerMessage);
   client.on("server time", onServerTime);
   client.on("players", onGetPlayers);
+  client.on("join room", onJoinRoom);
+  client.on("room chat", onRoomChat);
+  client.on("room update position", onRoomUpdatePosition);
 };
 
 function onAuth(token) {
@@ -54,7 +57,7 @@ function onAuth(token) {
     var loginInfo = lookUpToken(token);
     if (loginInfo) {
       // Init Player class
-      var newPlayer = new Player(loginInfo.userid, loginInfo.username, this.id)
+      var newPlayer = new Player(loginInfo.userid, loginInfo.username, this.id, this);
       logInfo(newPlayer.username + ' authenticated', 100);
       this.userid = loginInfo.userid;
       players[this.userid] = newPlayer;
@@ -66,15 +69,47 @@ function onAuth(token) {
         players: Object.keys(players).length,
         time: Date.now(),
       })
-      // Join a main lobby
+      // Client should join a main lobby? Maybe join a room?
     } else {
       this.disconnect();
     }
   } else {
     this.disconnect();
   }
-
 }
+
+function onJoinRoom(room) {
+  if (this.currentRoom) {
+    // tell everyone im gone
+    // part the room
+    this.leave(this.currentRoom);
+    // delete myself from the list
+    var index = rooms[this.currentRoom].players.indexOf(this.userid);
+    rooms[this.currentRoom].players.splice(index, 1);
+  }
+  this.join(room);
+  this.currentRoom = room;
+  if (rooms[room]){
+    rooms[room].players.push(this.userid);
+  } else {
+    rooms[room] = { name: room, players: [this.userid]}
+  }
+  this.emit('room list', rooms[room]);
+  this.broadcast.to(room).emit('new room player', players[this.userid]);
+}
+
+function onRoomChat(chatMessage) {
+  logInfo(this.currentRoom + ' > ' + players[this.userid].username + ": " + chatMessage)
+  this.broadcast.to(this.currentRoom).emit('room chat', {room: this.currentRoom, userid: this.userid, username: players[this.userid].username, message: chatMessage});
+};
+
+function onRoomUpdatePosition(position) {
+  
+
+  logInfo(this.currentRoom + ' > ' + players[this.userid].username + ": updatePosition")
+  this.broadcast.to(this.currentRoom).emit('room position', {userid: this.userid, position: position});
+};
+
 
 function lookUpToken(token) {
   if (token == 'YES') {
@@ -116,9 +151,17 @@ function lookUpToken(token) {
 };
 
 function onClientDisconnect(client) {
-  logInfo(players[this.userid].username + ' disconnected.');
+  if (players[this.userid]) {
+    logInfo(players[this.userid].username + ' disconnected.');
+  }
   // TODO notify all other appropriate players.
   delete players[this.userid];
+
+  if (this.currentRoom && rooms[this.currentRoom]) {
+    var index = rooms[this.currentRoom].players.indexOf(this.userid);
+    rooms[this.currentRoom].players.splice(index, 1);
+
+  }
 };
 
 function onPlayerMessage(messageText) {
@@ -127,12 +170,12 @@ function onPlayerMessage(messageText) {
 
 function onServerTime() {
   this.emit('time', Date.now() );
-  //io.emit('time', Date.now() );
 };
 
 function onGetPlayers() {
   this.emit('players', players);
-}
+};
+
 
 
 function logInfo(string, level) {

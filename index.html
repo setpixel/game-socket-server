@@ -14,7 +14,8 @@
 
   // 1. connect 
   var socket = io.connect('http://localhost:3000');
-  
+   var localTime;
+ 
   socket.on('onconnected', function (data) {
     // put whole loop in here
 
@@ -25,7 +26,11 @@
       console.log(stats);
     });
     socket.on('authenticated', function(user){
+      console.log("YESSSS LOGGED IN!");
       console.log(user);
+      // join a room
+      socket.emit('join room', 'funhouse');
+
     });
 
 
@@ -50,16 +55,51 @@
     socket.emit('server time');
   
     socket.on('time', function (data) {
+      if (localTime) {
+        console.log('Ping time: ' + (Date.now() - localTime))
+      }
       console.log(data);
     });
+
 
     socket.on('players', function (data) {
       console.log(data);
     });
 
+    socket.on('room list', function (data) {
+      console.log(data);
+      socket.emit('room chat', "hey everybody!!!");
+    });
+
+    socket.on('room chat', function(message){
+      console.log(message);
+    });
+
+    socket.on('new room player', function(player){
+      console.log("NEW PLAYER!!!", player);
+    });
+    
+    socket.on('room position', function(position){
+      console.log("update position: ", position);
+    });
+
+
 
 
   });
+
+  function syncTime() {
+    localTime = Date.now();
+    socket.emit('server time');
+  }
+
+  window.addEventListener("mousemove", function(event){
+    if (socket.connected) {
+      console.log(event.x, event.y)
+      socket.emit('room update position', {x: event.x, y: event.y});
+    }
+  });
+
 
 
 </script>
