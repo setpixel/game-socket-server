@@ -21,6 +21,13 @@
     // authenticate with token
     socket.emit('auth', 'YES');
     // get stats
+    socket.on('server stats', function(stats){
+      console.log(stats);
+    });
+    socket.on('authenticated', function(user){
+      console.log(user);
+    });
+
 
     // sync time with server
     // join lobby
@@ -43,6 +50,10 @@
     socket.emit('server time');
   
     socket.on('time', function (data) {
+      console.log(data);
+    });
+
+    socket.on('players', function (data) {
       console.log(data);
     });
 

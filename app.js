@@ -13,10 +13,9 @@ var serverConfig = {
 }
 
 var players;
-var connectionAuthTimeout;
 
 function init() {
-  players = [];
+  players = {};
   server.listen(serverConfig.port);
   logInfo('Listening on port ' + serverConfig.port, 100);
   logInfo('Version: ' + serverConfig.version, 100);
@@ -30,31 +29,43 @@ app.get('/', function (req, res) {
 });
 
 function onSocketConnection(client) {
-  client.userid = UUID();
-  client.emit('onconnected', { id: client.userid } );
-  logInfo(client.userid + ' connected', 100);
+  client.emit('onconnected');
+  logInfo(client.id + ' connected', 100);
   // start the clock for them to auth
-  connectionAuthTimeout = setTimeout(function(){
-    logInfo('disconnect user after 2000 ms');
+  client.connectionAuthTimeout = setTimeout(function(){
+    logInfo('disconnect user after 5000 ms');
     client.disconnect();
-  }, 2000);
+  }, 5000);
   client.on('auth', onAuth);
 
 
 
   client.on("disconnect", onClientDisconnect);
   client.on("player message", onPlayerMessage);
-  client.on("new player", onNewPlayer);
   client.on("server time", onServerTime);
+  client.on("players", onGetPlayers);
 };
 
 function onAuth(token) {
-  clearTimeout(connectionAuthTimeout);
+  clearTimeout(this.connectionAuthTimeout);
   if (token) {
     // look up token. is good let them in, not disconnect
-    if (token == 'YES') {
+    //var loginInfo;
+    var loginInfo = lookUpToken(token);
+    if (loginInfo) {
       // Init Player class
+      var newPlayer = new Player(loginInfo.userid, loginInfo.username, this.id)
+      logInfo(newPlayer.username + ' authenticated', 100);
+      this.userid = loginInfo.userid;
+      players[this.userid] = newPlayer;
+      this.emit('authenticated', newPlayer);
       // Grab Global information Information/stats
+      this.emit('server stats', {
+        name: serverConfig.name,
+        version: serverConfig.version,
+        players: Object.keys(players).length,
+        time: Date.now(),
+      })
       // Join a main lobby
     } else {
       this.disconnect();
@@ -65,28 +76,64 @@ function onAuth(token) {
 
 }
 
+function lookUpToken(token) {
+  if (token == 'YES') {
+    var fakeusers = [
+      { 
+        userid: 1,
+        username: 'setpixel',
+      },
+      { 
+        userid: 2,
+        username: 'eip56',
+      },
+      { 
+        userid: 3,
+        username: 'sneech',
+      },
+      { 
+        userid: 4,
+        username: 'bob',
+      },
+      { 
+        userid: 5,
+        username: 'susan',
+      },
+      { 
+        userid: 6,
+        username: 'jerry',
+      },
+      { 
+        userid: 7,
+        username: 'linda',
+      }
+    ];
+    var user = fakeusers[Math.round(Math.random()*(fakeusers.length-1))]
+    return user;
+  } else {
+    return false;
+  }
+};
+
 function onClientDisconnect(client) {
-  logInfo('client disconnected ' + this.userid);
+  logInfo(players[this.userid].username + ' disconnected.');
+  // TODO notify all other appropriate players.
+  delete players[this.userid];
 };
 
 function onPlayerMessage(messageText) {
   console.log('\t socket.io:: player ' + this.userid + ': ' + messageText);
 };
 
-function onNewPlayer() {
-  console.log('New Player!!!');
-  var newPlayer = new Player();
-  //newPlayer.id = this.id;
-
-  players.push(newPlayer);
-
-  console.log(players);
-};
-
 function onServerTime() {
   this.emit('time', Date.now() );
   //io.emit('time', Date.now() );
 };
+
+function onGetPlayers() {
+  this.emit('players', players);
+}
+
 
 function logInfo(string, level) {
   if (!level) { level = 0 };
