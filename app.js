@@ -10,7 +10,7 @@ var serverConfig = {
   version: '0.0.1',
   port: process.env.PORT || 3000,
   name: process.env.SERVER_NAME || 'CHUCKLESERVER',
-  logLevel: 0,
+  logLevel: 1,
 }
 
 var players;
@@ -93,9 +93,10 @@ function onJoinRoom(room) {
   this.join(room);
   this.currentRoom = room;
   if (rooms[room]){
-    rooms[room].players.push(this.userid);
+    rooms[room].players[this.userid] = players[this.userid];
   } else {
-    rooms[room] = { name: room, players: [this.userid]}
+    rooms[room] = { name: room, players: {}};
+    rooms[room].players[this.userid] = players[this.userid];
   }
   this.emit('room list', rooms[room]);
   this.broadcast.to(room).emit('new room player', players[this.userid]);
@@ -107,7 +108,7 @@ function onRoomChat(chatMessage) {
 };
 
 function onRoomUpdatePosition(position) {
-  
+  players[this.userid].updatePosition(position.x, position.y);
 
   logInfo(this.currentRoom + ' > ' + players[this.userid].username + ": updatePosition")
   this.broadcast.to(this.currentRoom).emit('room position', {userid: this.userid, clientid: this.id, position: position});
@@ -136,9 +137,7 @@ function onClientDisconnect(client) {
   delete players[this.userid];
 
   if (this.currentRoom && rooms[this.currentRoom]) {
-    var index = rooms[this.currentRoom].players.indexOf(this.userid);
-    rooms[this.currentRoom].players.splice(index, 1);
-
+    delete rooms[this.currentRoom].players[this.userid];
   }
 };
 

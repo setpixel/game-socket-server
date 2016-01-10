@@ -17,9 +17,14 @@
   //  p2p chatt
 
   // 1. connect 
-  var socket = io.connect('/');
-   var localTime;
- 
+  var socket = io.connect('//', {
+    reconnection:false
+  });
+  
+  var localTime;
+  var userid;
+
+
   socket.on('onconnected', function (data) {
     // put whole loop in here
 
@@ -30,11 +35,10 @@
       console.log(stats);
     });
     socket.on('authenticated', function(user){
-      console.log("YESSSS LOGGED IN!");
       console.log(user);
+      userid = user.userid;
       // join a room
       socket.emit('join room', 'funhouse');
-
     });
 
 
@@ -71,7 +75,15 @@
     });
 
     socket.on('room list', function (data) {
-      console.log(data);
+      console.log(data.players);
+
+      for(var index in data.players) { 
+        var player = data.players[index];
+        if (userid !== player.userid) {
+          addCursor(player.x, player.y, player.username, player.clientid);
+        }
+      }
+
       socket.emit('room chat', "hey everybody!!!");
     });
 
@@ -85,7 +97,7 @@
     });
     
     socket.on('room position', function(position){
-      console.log("update position: ", position);
+      //console.log("update position: ", position);
       updateCursorPosition(position.position.x, position.position.y, position.clientid.substr(2))
     });
 
@@ -109,6 +121,7 @@
   function addCursor(x, y, name, id) {
     var $newdiv = $('<div id="' + id.substr(2) + '" ><img src="mac-cursor.png"><span>' + name + '</span></div>');
     $('body').append($newdiv);
+    $newdiv.offset({top:y,left:x})
   }
 
   function updateCursorPosition(x, y, id) {
