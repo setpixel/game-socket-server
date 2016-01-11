@@ -1,14 +1,13 @@
 module.exports = function makeRoom(client, rooms, players, logInfo) {
   return {
     
-    onJoinRoom: function onJoinRoom(room) {
+    onJoinRoom(room) {
       if (client.currentRoom) {
         // tell everyone im gone
         // part the room
         client.leave(client.currentRoom);
         // delete myself from the list
-        var index = rooms[client.currentRoom].players.indexOf(client.userid);
-        rooms[client.currentRoom].players.splice(index, 1);
+        delete rooms[client.currentRoom].players[client.userid];
       }
       client.join(room);
       client.currentRoom = room;
@@ -22,12 +21,12 @@ module.exports = function makeRoom(client, rooms, players, logInfo) {
       client.broadcast.to(room).emit('new room player', players[client.userid]);
     },
 
-    onRoomChat: function onRoomChat(chatMessage) {
+    onRoomChat(chatMessage) {
       logInfo(client.currentRoom + ' > ' + players[client.userid].username + ": " + chatMessage)
       client.broadcast.to(client.currentRoom).emit('room chat', {room: client.currentRoom, userid: client.userid, username: players[client.userid].username, message: chatMessage});
     },
 
-    onRoomUpdatePosition: function onRoomUpdatePosition(position) {
+    onRoomUpdatePosition(position) {
       players[client.userid].updatePosition(position.x, position.y);
 
       logInfo(client.currentRoom + ' > ' + players[client.userid].username + ": updatePosition")

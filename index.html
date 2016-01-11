@@ -101,6 +101,9 @@
       updateCursorPosition(position.position.x, position.position.y, position.clientid.substr(2))
     });
 
+    socket.on('update', function(data) {
+      console.log('update', data);
+    })
 
 
 

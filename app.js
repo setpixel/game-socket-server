@@ -3,9 +3,9 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var UUID = require('node-uuid');
+var gameloop = require('node-gameloop');
 
 var Player = require('./player');
-// var room = require('./room')(client, players, rooms, logInfo);
 
 var serverConfig = {
   version: '0.0.1',
@@ -21,16 +21,14 @@ function init() {
   players = {};
   rooms = {};
   server.listen(serverConfig.port);
-  logInfo('Listening on port ' + serverConfig.port, 100);
-  logInfo('Version: ' + serverConfig.version, 100);
-  logInfo('Time: ' + Date.now(), 100);
+  logInfo(`Listening on port ${serverConfig.port}`, 100);
+  logInfo(`Version: ${serverConfig.version}`, 100);
+  logInfo(`Time: ${Date.now()}`, 100);
   logInfo('=============================================', 100);
   io.on('connection', onSocketConnection);
 }
 
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/index.html');
-});
+app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
 app.use(express.static('public'));
 
@@ -40,7 +38,7 @@ function onSocketConnection(client) {
   client.emit('onconnected');
   logInfo(client.id + ' connected', 100);
   // start the clock for them to auth
-  client.connectionAuthTimeout = setTimeout(function(){
+  client.connectionAuthTimeout = setTimeout( () => {
     logInfo('disconnect user after 5000 ms');
     client.disconnect();
   }, 5000);
@@ -55,12 +53,28 @@ function onSocketConnection(client) {
   client.on("room update position", room.onRoomUpdatePosition);
 };
 
+
+var frameCount = 0;
+var id = gameloop.setGameLoop(function(delta) {
+    // `delta` is the delta time from the last frame
+    //console.log('Hi there! (frame=%s, delta=%s)', frameCount++, delta);
+    for (var room in rooms) {
+      //console.log(room, rooms)
+      io.to(room).emit('update', room);
+    }
+
+   // 
+}, 1000 / 60);
+
+
+
+
 function onAuth(token) {
   clearTimeout(this.connectionAuthTimeout);
   if (token) {
     // look up token. is good let them in, not disconnect
     //var loginInfo;
-    var loginInfo = lookUpToken(token);
+    const loginInfo = lookUpToken(token);
     if (loginInfo) {
       // Init Player class
       var newPlayer = new Player(loginInfo.userid, loginInfo.username, this.id, this);
@@ -84,16 +98,11 @@ function onAuth(token) {
   }
 }
 
-
-
 function lookUpToken(token) {
   if (token == 'YES') {
-    var fakenames = ["David", "Scott", "Andrew", "James", "Christopher", "Michael", "Craig", "Ryan", "Daniel", "Ross", "Jamie", "Sean", "John", "Jordan", "Robert", "Steven", "Liam", "Mark", "Paul", "Stuart", "Matthew", "Stephen", "Thomas", "Callum", "Darren", "Gary", "Lewis", "William", "Connor", "Calum", "Martin", "Grant", "Adam", "Alexander", "Kyle", "Lee", "Kevin", "Jonathan", "Shaun", "Fraser", "Kieran", "Jack", "Dean", "Cameron", "Peter", "Alan", "Iain", "Marc", "Greg", "Graeme", "Conor", "Ian", "Euan", "Gavin", "Richard", "Blair", "Colin", "Joseph", "Aaron", "Dale", "Neil", "Sam", "Jason", "Joshua", "Gordon", "Samuel", "Stewart", "Nathan", "Nicholas", "Anthony", "Douglas", "Rory", "Alistair", "Brian", "Allan", "Ewan", "George", "Duncan", "Graham", "Ben", "Benjamin", "Gregor", "Declan", "Patrick", "Dylan", "Kenneth", "Derek", "Alasdair", "Owen", "Greig", "Barry", "Aidan", "Gareth", "Josh", "Charles", "Daryl", "Garry", "Simon", "Robbie", "Alastair"];  
-    var fakeusers = [];
-    for (var i = 0; i < fakenames.length; i++) {
-      fakeusers.push({userid: i, username: fakenames[i]});
-    }
-    var user = fakeusers[Math.round(Math.random()*(fakeusers.length-1))]
+    const fakenames = ["David", "Scott", "Andrew", "James", "Christopher", "Michael", "Craig", "Ryan", "Daniel", "Ross", "Jamie", "Sean", "John", "Jordan", "Robert", "Steven", "Liam", "Mark", "Paul", "Stuart", "Matthew", "Stephen", "Thomas", "Callum", "Darren", "Gary", "Lewis", "William", "Connor", "Calum", "Martin", "Grant", "Adam", "Alexander", "Kyle", "Lee", "Kevin", "Jonathan", "Shaun", "Fraser", "Kieran", "Jack", "Dean", "Cameron", "Peter", "Alan", "Iain", "Marc", "Greg", "Graeme", "Conor", "Ian", "Euan", "Gavin", "Richard", "Blair", "Colin", "Joseph", "Aaron", "Dale", "Neil", "Sam", "Jason", "Joshua", "Gordon", "Samuel", "Stewart", "Nathan", "Nicholas", "Anthony", "Douglas", "Rory", "Alistair", "Brian", "Allan", "Ewan", "George", "Duncan", "Graham", "Ben", "Benjamin", "Gregor", "Declan", "Patrick", "Dylan", "Kenneth", "Derek", "Alasdair", "Owen", "Greig", "Barry", "Aidan", "Gareth", "Josh", "Charles", "Daryl", "Garry", "Simon", "Robbie", "Alastair"];  
+    const fakeusers = fakenames.map((name, i) => ({ userid: i, username: name}));
+    const user = fakeusers[Math.round(Math.random()*(fakeusers.length-1))]
     return user;
   } else {
     return false;
@@ -113,7 +122,7 @@ function onClientDisconnect(client) {
 };
 
 function onPlayerMessage(messageText) {
-  console.log('\t socket.io:: player ' + this.userid + ': ' + messageText);
+  console.log(`\t socket.io:: player ${this.userid} : ${messageText}`);
 };
 
 function onServerTime() {
@@ -124,12 +133,10 @@ function onGetPlayers() {
   this.emit('players', players);
 };
 
-
-
 function logInfo(string, level) {
   if (!level) { level = 0 };
   if (level >= serverConfig.logLevel) {
-    console.log('\t || ' + serverConfig.name + ' || ' + string);
+    console.log(`\t || ${serverConfig.name} || ${string}`);
   }
 }
 
