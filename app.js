@@ -5,6 +5,7 @@ var io = require('socket.io')(server);
 var UUID = require('node-uuid');
 
 var Player = require('./player');
+// var room = require('./room')(client, players, rooms, logInfo);
 
 var serverConfig = {
   version: '0.0.1',
@@ -34,6 +35,8 @@ app.get('/', function (req, res) {
 app.use(express.static('public'));
 
 function onSocketConnection(client) {
+  var room = require('./room')(client, rooms, players, logInfo);
+
   client.emit('onconnected');
   logInfo(client.id + ' connected', 100);
   // start the clock for them to auth
@@ -47,9 +50,9 @@ function onSocketConnection(client) {
   client.on("player message", onPlayerMessage);
   client.on("server time", onServerTime);
   client.on("players", onGetPlayers);
-  client.on("join room", onJoinRoom);
-  client.on("room chat", onRoomChat);
-  client.on("room update position", onRoomUpdatePosition);
+  client.on("join room", room.onJoinRoom);
+  client.on("room chat", room.onRoomChat);
+  client.on("room update position", room.onRoomUpdatePosition);
 };
 
 function onAuth(token) {
@@ -81,38 +84,6 @@ function onAuth(token) {
   }
 }
 
-function onJoinRoom(room) {
-  if (this.currentRoom) {
-    // tell everyone im gone
-    // part the room
-    this.leave(this.currentRoom);
-    // delete myself from the list
-    var index = rooms[this.currentRoom].players.indexOf(this.userid);
-    rooms[this.currentRoom].players.splice(index, 1);
-  }
-  this.join(room);
-  this.currentRoom = room;
-  if (rooms[room]){
-    rooms[room].players[this.userid] = players[this.userid];
-  } else {
-    rooms[room] = { name: room, players: {}};
-    rooms[room].players[this.userid] = players[this.userid];
-  }
-  this.emit('room list', rooms[room]);
-  this.broadcast.to(room).emit('new room player', players[this.userid]);
-}
-
-function onRoomChat(chatMessage) {
-  logInfo(this.currentRoom + ' > ' + players[this.userid].username + ": " + chatMessage)
-  this.broadcast.to(this.currentRoom).emit('room chat', {room: this.currentRoom, userid: this.userid, username: players[this.userid].username, message: chatMessage});
-};
-
-function onRoomUpdatePosition(position) {
-  players[this.userid].updatePosition(position.x, position.y);
-
-  logInfo(this.currentRoom + ' > ' + players[this.userid].username + ": updatePosition")
-  this.broadcast.to(this.currentRoom).emit('room position', {userid: this.userid, clientid: this.id, position: position});
-};
 
 
 function lookUpToken(token) {
