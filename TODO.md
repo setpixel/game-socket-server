@@ -7,10 +7,14 @@
 * On room gameloop, keep track of framerate. If drops below a certain amount, should alert someone. Its reaching max user count.
 * Come up with better naming convention for server and client messages. They are too long and not good: 'new room player' could be 'jnRoom' maybe?
 * Remove semicolon syntactic sugar
+* saving player data. periodically save the players state (loc, inventory, etc) to a central data store (redis?) maybe on auth, we should send the data back.
+* method for server stats
+  number of players
+  active rooms and number of players in each room, avg frame rate, worst frame rate
+  
 
 email users when player count goes above a certain amount
-saving player data
 saving room data
 joining a room with too many people
 farming elements
-method for server stats
+
