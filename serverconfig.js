@@ -4,6 +4,7 @@ const serverConfig = {
   name: process.env.SERVER_NAME || 'CHUCKLESERVER',
   logLevel: 1,
   framerate: 1000/1,
+  authTimeout: 1000,
 }
 
 module.exports = serverConfig
