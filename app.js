@@ -22,11 +22,11 @@ function init() {
   Logger.log(`Listening on port ${serverConfig.port}`, 100);
   Logger.log(`Version: ${serverConfig.version}`, 100);
   Logger.log(`Time: ${Date.now()}`, 100);
-  Logger.log(`GUITAR RIFF ♪♫♪☠☠`, 100);
+  Logger.log(`♪♫♪ GUITAR RIFF ♪♫♪`, 100);
   Logger.log('=============================================', 100);
 
   io.on('connection', socket => {
-    const client = new Client(players, rooms, serverConfig)
+    const client = new Client(players, rooms)
     client.onConnected(socket)
   })
 }

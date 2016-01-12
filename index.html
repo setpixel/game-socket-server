@@ -75,7 +75,7 @@
     });
 
     socket.on('room list', function (data) {
-      console.log(data.players);
+      console.log(data);
 
       for(var index in data.players) { 
         var player = data.players[index];

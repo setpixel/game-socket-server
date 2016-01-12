@@ -1,15 +1,15 @@
 'use strict'
 
+var serverConfig = require('./serverconfig');
 var Logger = require('./logger')
 var Player = require('./player')
 var Room = require('./room')
 
 class Client {
   
-  constructor(players, rooms, serverConfig) {
+  constructor(players, rooms) {
     this.players = players;
     this.rooms = rooms;
-    this.serverConfig = serverConfig;
     this.client = null
   }
 
@@ -30,31 +30,11 @@ class Client {
     this.client.on("join room", this.onJoinRoom.bind(this));
     this.client.on("room chat", this.onRoomChat.bind(this));
     this.client.on("room update position", this.onRoomUpdatePosition.bind(this));
-    //this.client.on("players", onGetPlayers);
-    //this.client.on("player message", onPlayerMessage);
+ 
   }
 
   onJoinRoom(room) {
-    if (this.currentRoom) {
-      // tell everyone im gone
-      // part the room
-      this.client.leave(this.currentRoom);
-      // delete myself from the list
-      delete this.rooms[this.currentRoom].players[this.userid];
-    }
-    this.client.join(room);
-    this.currentRoom = room;
-    if (this.rooms[room]){
-      this.rooms[room].players[this.userid] = this.players[this.userid];
-    } else {
-      var roomInstance = new Room(room, this.players[this.userid], this.client.server);
-      
-      this.rooms[room] = roomInstance;
-      // this.rooms[room] = { name: room, players: {}};
-      // this.rooms[room].players[this.userid] = this.players[this.userid];
-    }
-    this.client.emit('room list', this.rooms[room]);
-    this.client.broadcast.to(room).emit('new room player', this.players[this.userid]);
+    this.player.joinRoom(room);
   }
 
   onRoomChat(chatMessage) {
@@ -63,30 +43,27 @@ class Client {
   }
 
   onRoomUpdatePosition(position) {
-    this.players[this.userid].updatePosition(position.x, position.y);
+    this.player.updatePosition(position.x, position.y);
     Logger.log(this.currentRoom + ' > ' + this.players[this.userid].username + ": updatePosition")
-    this.client.broadcast.to(this.currentRoom).emit('room position', {userid: this.userid, clientid: this.client.id, position: position});
+    this.client.broadcast.to(this.player.currentRoom).emit('room position', {userid: this.userid, clientid: this.client.id, position: position});
   }
 
   onAuth(token) {
     clearTimeout(this.connectionAuthTimeout);
     if (token) {
       // look up token. is good let them in, not disconnect
-      //var loginInfo;
-      //console.log()
-
       const loginInfo = this.lookUpToken(token);
       if (loginInfo) {
         // Init Player class
-        var newPlayer = new Player(loginInfo.userid, loginInfo.username, this.client.id, this.client);
+        var newPlayer = new Player(loginInfo.userid, loginInfo.username, this.client.id, this.client, this.rooms);
         Logger.log(newPlayer.username + ' authenticated', 100);
         this.userid = loginInfo.userid;
-        this.players[this.userid] = newPlayer;
+        this.players[this.userid] = this.player = newPlayer;
         this.client.emit('authenticated', newPlayer);
         // Grab Global information Information/stats
         this.client.emit('server stats', {
-          name: this.serverConfig.name,
-          version: this.serverConfig.version,
+          name: serverConfig.name,
+          version: serverConfig.version,
           players: Object.keys(this.players).length,
           time: Date.now(),
         })
@@ -111,28 +88,20 @@ class Client {
   };
 
   onClientDisconnect() {
-    if (this.players[this.userid]) {
-      Logger.log(this.players[this.userid].username + ' disconnected.');
-    }
-    // TODO notify all other appropriate players.
-    delete this.players[this.userid];
-
-    if (this.currentRoom && this.rooms[this.currentRoom]) {
-      delete this.rooms[this.currentRoom].players[this.userid];
+    if (this.player) {
+      Logger.log(this.player.username + ' disconnected.', 100);
+      // TODO notify all other appropriate players.
+      // remove from players list
+      delete this.players[this.userid];
+      if (this.player.currentRoom) {
+        this.player.leaveRoom()
+      }
     }
   };
 
   onServerTime() {
     this.client.emit('time', Date.now() );
   };
-
-// function onGetPlayers() {
-//   this.emit('players', players);
-// };
-
-// function onPlayerMessage(messageText) {
-//   console.log(`\t socket.io:: player ${this.userid} : ${messageText}`);
-// };
 
 }
 
