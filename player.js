@@ -21,16 +21,9 @@ class Player {
     this.y = y;
   }
 
-  getClient() {
-    return this[_client];
-  }
-
-  toObject() {
-    console.log('its working');
-    return {
-      x: 100
-    }
-  }
+  // getClient() {
+  //   return this[_client];
+  // }
 
 }
 

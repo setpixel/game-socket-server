@@ -1,9 +1,11 @@
 'use strict'
 
 var Logger = require('./logger')
-var Player = require('./player');
+var Player = require('./player')
+var Room = require('./room')
 
 class Client {
+  
   constructor(players, rooms, serverConfig) {
     this.players = players;
     this.rooms = rooms;
@@ -36,7 +38,7 @@ class Client {
     if (this.currentRoom) {
       // tell everyone im gone
       // part the room
-      this.client.leave(client.currentRoom);
+      this.client.leave(this.currentRoom);
       // delete myself from the list
       delete this.rooms[this.currentRoom].players[this.userid];
     }
@@ -45,8 +47,11 @@ class Client {
     if (this.rooms[room]){
       this.rooms[room].players[this.userid] = this.players[this.userid];
     } else {
-      this.rooms[room] = { name: room, players: {}};
-      this.rooms[room].players[this.userid] = this.players[this.userid];
+      var roomInstance = new Room(room, this.players[this.userid], this.client.server);
+      
+      this.rooms[room] = roomInstance;
+      // this.rooms[room] = { name: room, players: {}};
+      // this.rooms[room].players[this.userid] = this.players[this.userid];
     }
     this.client.emit('room list', this.rooms[room]);
     this.client.broadcast.to(room).emit('new room player', this.players[this.userid]);
@@ -128,8 +133,6 @@ class Client {
 // function onPlayerMessage(messageText) {
 //   console.log(`\t socket.io:: player ${this.userid} : ${messageText}`);
 // };
-
-
 
 }
 
