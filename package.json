@@ -1,13 +1,15 @@
 {
   "name": "game-socket-server",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "realtime game server",
   "main": "main.js",
   "scripts": {
+    "start": "node main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Charles Forman",
   "license": "ISC",
+  "repository": "github:setpixel/game-socket-server",
   "dependencies": {
     "express": "^4.13.3",
     "node-gameloop": "^0.1.0",

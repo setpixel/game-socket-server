@@ -52,7 +52,7 @@ For now, everything is pretty simple. You connect, auth, join a room. Send updat
 
   1. Clone or download the repo
   2. npm install
-  3. node app
+  3. npm start
 
 ## Demo
 Deployed automatically on commit and push to master.

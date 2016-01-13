@@ -11,7 +11,8 @@
 * method for server stats
   number of players
   active rooms and number of players in each room, avg frame rate, worst frame rate
-  
+* if you join a room that has too many people in it, ask joinroom for the room name
+   
 
 email users when player count goes above a certain amount
 saving room data
