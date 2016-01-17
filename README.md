@@ -50,9 +50,9 @@ For now, everything is pretty simple. You connect, auth, join a room. Send updat
 
 ## Quick installation guide
 
-  1. Clone or download the repo
-  2. npm install
-  3. npm start
+  1. Clone or download the repo `git clone https://github.com/setpixel/game-socket-server.git`
+  2. `npm install`
+  3. `npm start`
 
 ## Demo
 Deployed automatically on commit and push to master.
